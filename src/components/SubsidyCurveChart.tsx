@@ -1,0 +1,150 @@
+import React from 'react';
+import {
+  Area,
+  CartesianGrid,
+  ComposedChart,
+  Legend,
+  Line,
+  ReferenceDot,
+  ReferenceLine,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
+import { calculateSubsidyCurve } from '../utils/solarCalculator';
+
+interface SubsidyCurveChartProps {
+  currentKw: number;
+  stateName?: string;
+}
+
+export const SubsidyCurveChart: React.FC<SubsidyCurveChartProps> = ({ currentKw, stateName = 'None' }) => {
+  const data = calculateSubsidyCurve(8, stateName);
+  const roundedKw = Math.round(currentKw * 10) / 10;
+
+  return (
+    <div className="chart-card">
+      <div className="chart-header">
+        <div>
+          <h3 className="chart-title">PM Surya Ghar Subsidy Efficiency Curve</h3>
+          <p className="chart-subtitle">
+            Total DBT Subsidy vs. Subsidy Captured per Installed kW
+          </p>
+        </div>
+        <div className="badge-sweetspot">
+          🌟 Sweet Spot: 3 kW (Max ₹78,000)
+        </div>
+      </div>
+
+      <div className="chart-container" style={{ width: '100%', height: 280 }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <ComposedChart data={data} margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
+            <defs>
+              <linearGradient id="subsidyGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#10b981" stopOpacity={0.35} />
+                <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.08)" />
+            <XAxis
+              dataKey="kw"
+              stroke="#94a3b8"
+              tickFormatter={(v) => `${v} kW`}
+              label={{ value: 'System Capacity (kWp)', position: 'insideBottom', offset: -10, fill: '#94a3b8' }}
+            />
+            {/* Left Y Axis for Total Subsidy */}
+            <YAxis
+              yAxisId="left"
+              stroke="#10b981"
+              tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`}
+              label={{ value: 'Total Subsidy (₹)', angle: -90, position: 'insideLeft', fill: '#10b981', dy: 40 }}
+            />
+            {/* Right Y Axis for Subsidy / kW */}
+            <YAxis
+              yAxisId="right"
+              orientation="right"
+              stroke="#f59e0b"
+              tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k/kW`}
+              label={{ value: 'Subsidy / kW', angle: 90, position: 'insideRight', fill: '#f59e0b', dy: 40 }}
+            />
+            <Tooltip
+              content={({ active, payload }) => {
+                if (!active || !payload || !payload.length) return null;
+                const pt = payload[0].payload;
+                return (
+                  <div className="chart-tooltip">
+                    <div className="tooltip-title">{pt.kw} kW System</div>
+                    <div className="tooltip-row">
+                      <span className="text-emerald">Total Subsidy:</span>
+                      <span className="font-bold">₹{pt.totalSubsidy.toLocaleString('en-IN')}</span>
+                    </div>
+                    <div className="tooltip-row">
+                      <span className="text-amber">Subsidy per kW:</span>
+                      <span className="font-bold">₹{pt.subsidyPerKw.toLocaleString('en-IN')}/kW</span>
+                    </div>
+                    {pt.kw === 3 && (
+                      <div className="tooltip-sweetspot">
+                        🎯 Maximum central subsidy efficiency cap!
+                      </div>
+                    )}
+                  </div>
+                );
+              }}
+            />
+            <Legend verticalAlign="top" height={36} />
+
+            <Area
+              yAxisId="left"
+              type="monotone"
+              dataKey="totalSubsidy"
+              name="Total Subsidy (₹)"
+              fill="url(#subsidyGradient)"
+              stroke="#10b981"
+              strokeWidth={3}
+            />
+            <Line
+              yAxisId="right"
+              type="monotone"
+              dataKey="subsidyPerKw"
+              name="Subsidy / kW (₹)"
+              stroke="#f59e0b"
+              strokeWidth={3}
+              dot={{ fill: '#f59e0b', r: 4 }}
+              activeDot={{ r: 6 }}
+            />
+
+            {/* Vertical marker for 3 kW Sweet Spot */}
+            <ReferenceLine
+              yAxisId="left"
+              x={3}
+              stroke="#f59e0b"
+              strokeDasharray="4 4"
+              label={{ value: '3 kW Cap (₹78k)', position: 'top', fill: '#f59e0b', fontSize: 11 }}
+            />
+
+            {/* Highlight user's chosen kW if within range */}
+            {roundedKw >= 1 && roundedKw <= 8 && (
+              <ReferenceDot
+                yAxisId="left"
+                x={roundedKw}
+                y={calculateSubsidyCurve(8, stateName).find(p => p.kw === roundedKw)?.totalSubsidy ?? 78000}
+                r={7}
+                fill="#38bdf8"
+                stroke="#ffffff"
+                strokeWidth={2}
+              />
+            )}
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
+
+      <div className="chart-insight-box">
+        <span className="insight-icon">💡</span>
+        <span className="insight-text">
+          <strong>Why 3 kW is the Sweet Spot:</strong> PM Surya Ghar offers ₹30,000/kW for the first 2 kW and ₹18,000 for the 3rd kW. Beyond 3 kW, the central subsidy stays fixed at ₹78,000, causing effective subsidy per kW to decline.
+        </span>
+      </div>
+    </div>
+  );
+};
