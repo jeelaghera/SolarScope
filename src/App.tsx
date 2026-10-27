@@ -87,7 +87,7 @@ export function App() {
   const [forecastLoading, setForecastLoading] = useState<boolean>(false);
   const [wikiCards, setWikiCards] = useState<WikiArticleSummary[]>([]);
   const [countryInfo, setCountryInfo] = useState<CountryInfo | null>(null);
-  const [_nasaApod, setNasaApod] = useState<NasaApodData | null>(null);
+  const [nasaApod, setNasaApod] = useState<NasaApodData | null>(null);
 
   // Computed Solar Intelligence Results
   const [sizing, setSizing] = useState<SizingResult>(() =>
@@ -706,6 +706,29 @@ Check your rooftop solar potential with SolarScope!`;
                   </a>
                 </div>
               ))}
+
+              {nasaApod && (
+                <div className="edu-card">
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <h4 className="edu-card-title">NASA Solar Observation</h4>
+                      <span className="text-xs text-amber font-semibold">api.nasa.gov</span>
+                    </div>
+                    <p className="edu-card-extract">
+                      {nasaApod.title}: {nasaApod.explanation.length > 130 ? nasaApod.explanation.substring(0, 130) + '...' : nasaApod.explanation}
+                    </p>
+                  </div>
+                  <a
+                    href={nasaApod.hdurl || nasaApod.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="edu-card-link"
+                  >
+                    <span>View NASA APOD</span>
+                    <ExternalLink size={12} />
+                  </a>
+                </div>
+              )}
             </div>
           </section>
         )}
