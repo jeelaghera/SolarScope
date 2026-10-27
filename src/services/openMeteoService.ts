@@ -87,14 +87,10 @@ export async function fetchWeeklyForecast(
   }
 
   if (!rawData) {
-    const apiKey = import.meta.env.VITE_OPEN_METEO_API_KEY || '';
-    const keyParam = apiKey && !apiKey.startsWith('demo') ? `&apikey=${encodeURIComponent(apiKey)}` : '';
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${latRounded}&longitude=${lonRounded}&daily=shortwave_radiation_sum,temperature_2m_max,temperature_2m_min,weathercode&timezone=auto${keyParam}`;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${latRounded}&longitude=${lonRounded}&daily=shortwave_radiation_sum,temperature_2m_max,temperature_2m_min,weathercode&timezone=auto`;
 
     try {
-      const headers: Record<string, string> = {};
-      if (apiKey) headers['X-API-Key'] = apiKey;
-      const res = await fetch(url, { headers });
+      const res = await fetch(url);
       if (!res.ok) throw new Error(`Open-Meteo HTTP ${res.status}`);
       rawData = await res.json();
 

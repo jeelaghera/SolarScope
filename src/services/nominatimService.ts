@@ -81,9 +81,6 @@ export async function searchAddress(query: string): Promise<GeocodeResult[]> {
       Accept: 'application/json',
       'User-Agent': 'SolarScope-Platform/1.0',
     };
-    if (apiKey && !isLocationIq && !apiKey.startsWith('demo')) {
-      headers['X-API-Key'] = apiKey;
-    }
 
     const res = await fetch(url, { headers });
 
