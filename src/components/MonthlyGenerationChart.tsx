@@ -43,16 +43,17 @@ export const MonthlyGenerationChart: React.FC<MonthlyGenerationChartProps> = ({ 
 
       <div className="chart-container" style={{ width: '100%', height: 280 }}>
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={chartData} margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
+          <ComposedChart data={chartData} margin={{ top: 15, right: 20, left: 15, bottom: 20 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.08)" />
-            <XAxis dataKey="month" stroke="#94a3b8" />
+            <XAxis dataKey="month" stroke="#64748b" tick={{ fill: '#94a3b8', fontSize: 11 }} />
             
             {/* Left Y Axis: Monthly Generation (kWh) */}
             <YAxis
               yAxisId="left"
               stroke="#38bdf8"
+              tick={{ fill: '#38bdf8', fontSize: 11 }}
               tickFormatter={(v) => `${v} kWh`}
-              label={{ value: 'Energy (kWh)', angle: -90, position: 'insideLeft', fill: '#38bdf8', dy: 40 }}
+              width={65}
             />
 
             {/* Right Y Axis: Cell Temperature (°C) */}
@@ -60,9 +61,11 @@ export const MonthlyGenerationChart: React.FC<MonthlyGenerationChartProps> = ({ 
               yAxisId="right"
               orientation="right"
               stroke="#f87171"
-              domain={[10, 60]}
+              domain={[20, 65]}
+              ticks={[20, 35, 50, 65]}
+              tick={{ fill: '#f87171', fontSize: 11 }}
               tickFormatter={(v) => `${v}°C`}
-              label={{ value: 'Cell Temp (°C)', angle: 90, position: 'insideRight', fill: '#f87171', dy: 40 }}
+              width={50}
             />
 
             <Tooltip

@@ -53,11 +53,12 @@ export const CashflowChart: React.FC<CashflowChartProps> = ({ financials }) => {
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.08)" />
-            <XAxis dataKey="year" stroke="#94a3b8" />
+            <XAxis dataKey="year" stroke="#64748b" tick={{ fill: '#94a3b8', fontSize: 11 }} />
             <YAxis
               stroke="#10b981"
+              tick={{ fill: '#10b981', fontSize: 11 }}
               tickFormatter={(v) => `₹${(v / 100000).toFixed(1)}L`}
-              label={{ value: 'Net Cashflow (₹)', angle: -90, position: 'insideLeft', fill: '#10b981', dy: 40 }}
+              width={65}
             />
             <Tooltip
               content={({ active, payload }) => {
