@@ -320,11 +320,12 @@ Check your rooftop solar potential with SolarScope!`;
       <header className="app-header">
         <div className="header-container">
           <div className="brand-section">
-            <div className="brand-logo-icon">
-              <Sun size={24} />
+            <div className="brand-logo-wrap">
+              <img src="/logo.png" alt="SolarScope Logo" className="brand-logo-img" />
             </div>
-            <div>
+            <div className="brand-title-group">
               <span className="brand-title">{t.appTitle}</span>
+              <span className="brand-badge-sub">PM Surya Ghar Engine</span>
             </div>
           </div>
 
