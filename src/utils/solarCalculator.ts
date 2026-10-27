@@ -152,11 +152,11 @@ export function calculateSubsidy(
  * Generates points for the Subsidy Efficiency Curve (1 kW to maxKw).
  */
 export function calculateSubsidyCurve(
-  maxKw = 8,
+  maxKw = 10,
   stateName = 'None'
 ): SubsidyCurvePoint[] {
   const points: SubsidyCurvePoint[] = [];
-  const steps = [1, 1.5, 2, 2.5, 3, 3.5, 4, 5, 6, 7, 8].filter(k => k <= maxKw);
+  const steps = [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10].filter(k => k <= maxKw);
 
   for (const kw of steps) {
     const sub = calculateSubsidy(kw, stateName);
@@ -353,7 +353,7 @@ export function calculateFinancials(
       const deficit = -prevCumulative;
       const fraction = annualSavings > 0 ? deficit / annualSavings : 0;
       paybackYears = year - 1 + fraction;
-      paybackMonths = Math.round(fraction * 12);
+      paybackMonths = Math.round(paybackYears * 12);
     }
 
     const co2AvoidedKg = Math.round(generationKwh * SOLAR_DEFAULTS.gridEmissionFactor);
@@ -372,9 +372,10 @@ export function calculateFinancials(
   // If payback not reached within 25 years
   if (!foundPayback) {
     paybackYears = 25;
-    paybackMonths = 0;
+    paybackMonths = 300;
   } else {
     paybackYears = Math.round(paybackYears * 10) / 10;
+    paybackMonths = Math.round(paybackYears * 12);
   }
 
   const netLifetimeProfit = Math.round(lifetimeSavings - netInvestment);

@@ -48,8 +48,29 @@ describe('End-to-End SolarScope System Verification', () => {
 
     expect(fin.paybackYears).toBeGreaterThan(2.0);
     expect(fin.paybackYears).toBeLessThan(5.0);
+    expect(fin.paybackMonths).toBe(Math.round(fin.paybackYears * 12));
+    expect(fin.paybackMonths).toBeGreaterThan(24);
     expect(fin.lifetimeSavings).toBeGreaterThan(500000);
     expect(fin.cashflow).toHaveLength(25);
+  });
+
+  it('verifies dynamic system capacity sizing scales with monthly consumption inputs', () => {
+    // ₹1,500 bill => ~214 kWh => 1.8 kWp (214 / (5.2 * 30 * 0.78) = 1.76 => 1.8)
+    const smallSizing = calculateSizing(0, 214, 5.2);
+    expect(smallSizing.recommendedCapacityKw).toBe(1.8);
+
+    // ₹4,000 bill => ~571 kWh => 4.7 kWp (571 / 121.68 = 4.69 => 4.7)
+    const mediumSizing = calculateSizing(0, 571, 5.2);
+    expect(mediumSizing.recommendedCapacityKw).toBe(4.7);
+
+    // ₹6,000 bill => ~857 kWh => 7.0 kWp (857 / 121.68 = 7.04 => 7.0)
+    const largeSizing = calculateSizing(0, 857, 5.2);
+    expect(largeSizing.recommendedCapacityKw).toBe(7.0);
+
+    // 10 kW subsidy curve includes 10 kW cap
+    const curve10 = calculateSubsidyCurve(10, 'None');
+    expect(curve10.find(p => p.kw === 10)).toBeDefined();
+    expect(curve10.find(p => p.kw === 10)?.centralSubsidy).toBe(78000);
   });
 
   it('verifies Indian state detection from address strings', () => {

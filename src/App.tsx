@@ -113,18 +113,7 @@ export function App() {
         console.warn('NASA POWER error:', e);
       }
 
-      // 2. Open-Meteo 7-day Live Forecast API
-      setForecastLoading(true);
-      try {
-        const fcData = await fetchWeeklyForecast(lat, lon, systemCapacityKw, tariff);
-        if (isMounted) setForecast(fcData);
-      } catch (e) {
-        console.warn('Open-Meteo error:', e);
-      } finally {
-        if (isMounted) setForecastLoading(false);
-      }
-
-      // 3. Wikipedia Summary API
+      // 2. Wikipedia Summary API
       try {
         const cards = await fetchSolarEducationCards();
         if (isMounted) setWikiCards(cards);
@@ -132,7 +121,7 @@ export function App() {
         console.warn('Wiki error:', e);
       }
 
-      // 4. REST Countries API
+      // 3. REST Countries API
       try {
         const cInfo = await fetchCountryDetails('india');
         if (isMounted) setCountryInfo(cInfo);
@@ -140,7 +129,7 @@ export function App() {
         console.warn('REST Countries error:', e);
       }
 
-      // 5. Official api.nasa.gov APOD API (Using NASA Open API Key)
+      // 4. Official api.nasa.gov APOD API (Using NASA Open API Key)
       try {
         const apod = await fetchNasaApod();
         if (isMounted) setNasaApod(apod);
@@ -155,6 +144,29 @@ export function App() {
       isMounted = false;
     };
   }, [lat, lon]);
+
+  // Reactive 7-day weather & solar forecast whenever lat, lon, capacity, or tariff updates
+  useEffect(() => {
+    let isMounted = true;
+
+    async function updateForecast() {
+      setForecastLoading(true);
+      try {
+        const fcData = await fetchWeeklyForecast(lat, lon, systemCapacityKw, tariff);
+        if (isMounted) setForecast(fcData);
+      } catch (e) {
+        console.warn('Open-Meteo forecast update error:', e);
+      } finally {
+        if (isMounted) setForecastLoading(false);
+      }
+    }
+
+    updateForecast();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [lat, lon, systemCapacityKw, tariff]);
 
   // Recalculate Solar Intelligence when inputs change
   useEffect(() => {
@@ -181,25 +193,52 @@ export function App() {
     setFinancials(computedFin);
   }, [systemCapacityKw, roofAreaM2, monthlyUnits, stateKey, tariff, costPerKw, climatology]);
 
-  // Sync bill and units
+  // Sync bill, units, and auto-recommend system capacity
   const handleBillChange = (val: number) => {
-    setMonthlyBill(val);
-    const computedUnits = Math.round(val / Math.max(1, tariff));
+    const safeVal = Math.max(0, val);
+    setMonthlyBill(safeVal);
+    const computedUnits = Math.round(safeVal / Math.max(1, tariff));
     setMonthlyUnits(computedUnits);
+
+    const avgH = climatology?.annualAvgH ?? 5.2;
+    const computedSizing = calculateSizing(roofAreaM2, computedUnits, avgH);
+    setSystemCapacityKw(Math.max(1.0, Math.min(computedSizing.recommendedCapacityKw, 10.0)));
   };
 
   const handleUnitsChange = (val: number) => {
-    setMonthlyUnits(val);
-    setMonthlyBill(Math.round(val * tariff));
+    const safeVal = Math.max(0, val);
+    setMonthlyUnits(safeVal);
+    setMonthlyBill(Math.round(safeVal * tariff));
+
+    const avgH = climatology?.annualAvgH ?? 5.2;
+    const computedSizing = calculateSizing(roofAreaM2, safeVal, avgH);
+    setSystemCapacityKw(Math.max(1.0, Math.min(computedSizing.recommendedCapacityKw, 10.0)));
+  };
+
+  const handleTariffChange = (val: number) => {
+    const safeTariff = Math.max(1, val);
+    setTariff(safeTariff);
+    if (inputMode === 'bill') {
+      const computedUnits = Math.round(monthlyBill / safeTariff);
+      setMonthlyUnits(computedUnits);
+      const avgH = climatology?.annualAvgH ?? 5.2;
+      const computedSizing = calculateSizing(roofAreaM2, computedUnits, avgH);
+      setSystemCapacityKw(Math.max(1.0, Math.min(computedSizing.recommendedCapacityKw, 10.0)));
+    } else {
+      setMonthlyBill(Math.round(monthlyUnits * safeTariff));
+    }
   };
 
   // When roof area is drawn on map
   const handleRoofAreaChange = (areaSqMeters: number) => {
     setRoofAreaM2(areaSqMeters);
+    const avgH = climatology?.annualAvgH ?? 5.2;
+    const computedSizing = calculateSizing(areaSqMeters, monthlyUnits, avgH);
     if (areaSqMeters > 0) {
-      const maxKw = Math.max(0.5, Math.floor(((areaSqMeters * 0.85) / 10.0) * 10) / 10);
-      const target = Math.min(maxKw, sizing.neededCapacityKw);
-      setSystemCapacityKw(Math.max(1.0, Math.min(target, 10.0)));
+      setSystemCapacityKw(Math.max(1.0, Math.min(computedSizing.recommendedCapacityKw, 10.0)));
+    } else {
+      // Revert to unconstrained units sizing when polygon cleared
+      setSystemCapacityKw(Math.max(1.0, Math.min(computedSizing.neededCapacityKw, 10.0)));
     }
   };
 
@@ -563,7 +602,7 @@ Check your rooftop solar potential with SolarScope!`;
                         type="number"
                         step="0.5"
                         value={tariff}
-                        onChange={(e) => setTariff(Number(e.target.value))}
+                        onChange={(e) => handleTariffChange(Number(e.target.value))}
                         className="form-input text-xs py-1"
                       />
                       <span className="label-hint">Default: {curr}7.0/kWh</span>

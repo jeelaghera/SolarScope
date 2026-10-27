@@ -12,7 +12,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { calculateSubsidyCurve } from '../utils/solarCalculator';
+import { calculateSubsidy, calculateSubsidyCurve } from '../utils/solarCalculator';
 
 interface SubsidyCurveChartProps {
   currentKw: number;
@@ -20,8 +20,25 @@ interface SubsidyCurveChartProps {
 }
 
 export const SubsidyCurveChart: React.FC<SubsidyCurveChartProps> = ({ currentKw, stateName = 'None' }) => {
-  const data = calculateSubsidyCurve(8, stateName);
   const roundedKw = Math.round(currentKw * 10) / 10;
+  const basePoints = calculateSubsidyCurve(10, stateName);
+
+  // Ensure current capacity has a point in Recharts data so reference dot maps perfectly
+  const existingPoint = basePoints.find((p) => Math.abs(p.kw - roundedKw) < 0.05);
+  let data = basePoints;
+  if (!existingPoint && roundedKw >= 1 && roundedKw <= 10) {
+    const sub = calculateSubsidy(roundedKw, stateName);
+    data = [...basePoints, {
+      kw: roundedKw,
+      centralSubsidy: sub.centralSubsidy,
+      stateSubsidy: sub.stateSubsidy,
+      totalSubsidy: sub.totalSubsidy,
+      subsidyPerKw: sub.subsidyPerKw,
+      isSweetSpot: roundedKw === 3,
+    }].sort((a, b) => a.kw - b.kw);
+  }
+
+  const currentSubsidy = calculateSubsidy(roundedKw, stateName).totalSubsidy;
 
   return (
     <div className="chart-card">
@@ -124,11 +141,11 @@ export const SubsidyCurveChart: React.FC<SubsidyCurveChartProps> = ({ currentKw,
             />
 
             {/* Highlight user's chosen kW if within range */}
-            {roundedKw >= 1 && roundedKw <= 8 && (
+            {roundedKw >= 1 && roundedKw <= 10 && (
               <ReferenceDot
                 yAxisId="left"
                 x={roundedKw}
-                y={calculateSubsidyCurve(8, stateName).find(p => p.kw === roundedKw)?.totalSubsidy ?? 78000}
+                y={currentSubsidy}
                 r={7}
                 fill="#38bdf8"
                 stroke="#ffffff"
