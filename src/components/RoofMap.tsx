@@ -36,6 +36,11 @@ export const RoofMap: React.FC<RoofMapProps> = ({
   const [measuredArea, setMeasuredArea] = useState<number>(0);
   const t = TRANSLATIONS.en;
 
+  const onRoofAreaChangeRef = useRef(onRoofAreaChange);
+  useEffect(() => {
+    onRoofAreaChangeRef.current = onRoofAreaChange;
+  }, [onRoofAreaChange]);
+
   useEffect(() => {
     if (!mapContainerRef.current) return;
     if (mapInstanceRef.current) return;
@@ -148,7 +153,7 @@ export const RoofMap: React.FC<RoofMapProps> = ({
         const areaM2 = turf.area(geoJson);
         const roundedArea = Math.round(areaM2 * 10) / 10;
         setMeasuredArea(roundedArea);
-        onRoofAreaChange(roundedArea, geoJson);
+        onRoofAreaChangeRef.current(roundedArea, geoJson);
       });
 
       // Handle polygon edit
@@ -162,13 +167,13 @@ export const RoofMap: React.FC<RoofMapProps> = ({
         });
         const rounded = Math.round(totalArea * 10) / 10;
         setMeasuredArea(rounded);
-        onRoofAreaChange(rounded, lastGeoJson);
+        onRoofAreaChangeRef.current(rounded, lastGeoJson);
       });
 
       // Handle polygon deletion
       map.on(drawEvents.DELETED, () => {
         setMeasuredArea(0);
-        onRoofAreaChange(0, null);
+        onRoofAreaChangeRef.current(0, null);
       });
     }
 
@@ -195,7 +200,7 @@ export const RoofMap: React.FC<RoofMapProps> = ({
       drawnItemsRef.current.clearLayers();
     }
     setMeasuredArea(0);
-    onRoofAreaChange(0, null);
+    onRoofAreaChangeRef.current(0, null);
   };
 
   const handlePresetRoof = (presetM2: number) => {
@@ -222,7 +227,7 @@ export const RoofMap: React.FC<RoofMapProps> = ({
       const geoJson = rect.toGeoJSON();
       const area = Math.round(turf.area(geoJson) * 10) / 10;
       setMeasuredArea(area);
-      onRoofAreaChange(area, geoJson);
+      onRoofAreaChangeRef.current(area, geoJson);
     }
   };
 
@@ -254,13 +259,28 @@ export const RoofMap: React.FC<RoofMapProps> = ({
 
           <div className="quick-presets">
             <span className="preset-label">Quick roof sizes:</span>
-            <button type="button" onClick={() => handlePresetRoof(20)} className="btn-chip" title="20 sq meters (~2 kW system)">
+            <button
+              type="button"
+              onClick={() => handlePresetRoof(20)}
+              className={`btn-chip ${measuredArea >= 18 && measuredArea <= 22 ? 'active-amber' : ''}`}
+              title="20 sq meters (~2 kW system)"
+            >
               20 m² (2 kW)
             </button>
-            <button type="button" onClick={() => handlePresetRoof(35)} className="btn-chip active-amber" title="35 sq meters (~3 kW sweet spot)">
+            <button
+              type="button"
+              onClick={() => handlePresetRoof(35)}
+              className={`btn-chip ${measuredArea >= 33 && measuredArea <= 37 ? 'active-amber' : ''}`}
+              title="35 sq meters (~3 kW sweet spot)"
+            >
               35 m² (3 kW ⭐)
             </button>
-            <button type="button" onClick={() => handlePresetRoof(60)} className="btn-chip" title="60 sq meters (~5 kW system)">
+            <button
+              type="button"
+              onClick={() => handlePresetRoof(60)}
+              className={`btn-chip ${measuredArea >= 58 && measuredArea <= 62 ? 'active-amber' : ''}`}
+              title="60 sq meters (~5 kW system)"
+            >
               60 m² (5 kW)
             </button>
           </div>

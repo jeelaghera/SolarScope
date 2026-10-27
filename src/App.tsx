@@ -229,15 +229,18 @@ export function App() {
     }
   };
 
-  // When roof area is drawn on map
+  // When roof area is drawn, edited, or selected via preset on map
   const handleRoofAreaChange = (areaSqMeters: number) => {
     setRoofAreaM2(areaSqMeters);
-    const avgH = climatology?.annualAvgH ?? 5.2;
-    const computedSizing = calculateSizing(areaSqMeters, monthlyUnits, avgH);
     if (areaSqMeters > 0) {
-      setSystemCapacityKw(Math.max(1.0, Math.min(computedSizing.recommendedCapacityKw, 10.0)));
+      // Directly scale capacity to the physical rooftop size (10 m² shadow-free per kWp, 85% usable)
+      // e.g. 20 m² => 1.7 kWp, 35 m² => 3.0 kWp, 55 m² => 4.7 kWp, 65 m² => 5.5 kWp, 80 m² => 6.8 kWp, 100 m² => 8.5 kWp
+      const roofFitKw = Math.max(1.0, Math.min(10.0, Math.round(((areaSqMeters * 0.85) / 10.0) * 10) / 10));
+      setSystemCapacityKw(roofFitKw);
     } else {
-      // Revert to unconstrained units sizing when polygon cleared
+      // Revert to unconstrained consumption-based sizing when polygon cleared
+      const avgH = climatology?.annualAvgH ?? 5.2;
+      const computedSizing = calculateSizing(0, monthlyUnits, avgH);
       setSystemCapacityKw(Math.max(1.0, Math.min(computedSizing.neededCapacityKw, 10.0)));
     }
   };
