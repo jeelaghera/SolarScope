@@ -4,7 +4,6 @@ import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw/dist/leaflet.draw.css';
 import * as turf from '@turf/turf';
 import { MapPin, Trash2 } from 'lucide-react';
-import type { SupportedLanguage } from '../services/i18n';
 import { TRANSLATIONS } from '../services/i18n';
 
 // Fix Leaflet marker icons in bundlers
@@ -20,7 +19,6 @@ interface RoofMapProps {
   lon: number;
   zoom?: number;
   onRoofAreaChange: (areaSqMeters: number, geoJsonPolygon: any | null) => void;
-  lang: SupportedLanguage;
   locationName?: string;
 }
 
@@ -29,7 +27,6 @@ export const RoofMap: React.FC<RoofMapProps> = ({
   lon,
   zoom = 18,
   onRoofAreaChange,
-  lang,
   locationName,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -37,7 +34,7 @@ export const RoofMap: React.FC<RoofMapProps> = ({
   const drawnItemsRef = useRef<L.FeatureGroup | null>(null);
 
   const [measuredArea, setMeasuredArea] = useState<number>(0);
-  const t = TRANSLATIONS[lang];
+  const t = TRANSLATIONS.en;
 
   useEffect(() => {
     if (!mapContainerRef.current) return;

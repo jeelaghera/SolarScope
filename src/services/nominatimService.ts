@@ -65,16 +65,20 @@ export async function searchAddress(query: string): Promise<GeocodeResult[]> {
   const cached = getFromCache<GeocodeResult[]>(cacheKey);
   if (cached) return cached;
 
+  const apiKey = import.meta.env.VITE_NOMINATIM_API_KEY || '';
+  const keyParam = apiKey && !apiKey.startsWith('demo') ? `&key=${encodeURIComponent(apiKey)}` : '';
   const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
     trimmed
-  )}&addressdetails=1&countrycodes=in&limit=5`;
+  )}&addressdetails=1&countrycodes=in&limit=5${keyParam}`;
 
   try {
-    const res = await fetch(url, {
-      headers: {
-        Accept: 'application/json',
-      },
-    });
+    const headers: Record<string, string> = {
+      Accept: 'application/json',
+      'User-Agent': 'SolarScope-Platform/1.0',
+    };
+    if (apiKey) headers['X-API-Key'] = apiKey;
+
+    const res = await fetch(url, { headers });
 
     if (!res.ok) throw new Error(`Geocode failed: ${res.status}`);
     const data = await res.json();

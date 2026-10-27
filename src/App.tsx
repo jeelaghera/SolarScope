@@ -19,7 +19,6 @@ import { RoofMap } from './components/RoofMap';
 import { SubsidyCurveChart } from './components/SubsidyCurveChart';
 import { WeeklyForecastWidget } from './components/WeeklyForecastWidget';
 import { SOLAR_DEFAULTS, STATE_SUBSIDY_RULES } from './config/solarConfig';
-import type { SupportedLanguage } from './services/i18n';
 import { TRANSLATIONS } from './services/i18n';
 import type { NasaApodData } from './services/nasaApodService';
 import { fetchNasaApod } from './services/nasaApodService';
@@ -45,10 +44,17 @@ import {
   calculateSizing,
 } from './utils/solarCalculator';
 
+const QUICK_CITIES = [
+  { name: 'Ahmedabad', lat: 23.0225, lon: 72.5714, state: 'Gujarat', label: 'Ahmedabad, Gujarat, India' },
+  { name: 'Jaipur', lat: 26.9124, lon: 75.7873, state: 'Rajasthan', label: 'Jaipur, Rajasthan, India' },
+  { name: 'Pune', lat: 18.5204, lon: 73.8567, state: 'Maharashtra', label: 'Pune, Maharashtra, India' },
+  { name: 'Lucknow', lat: 26.8467, lon: 80.9462, state: 'UttarPradesh', label: 'Lucknow, Uttar Pradesh, India' },
+  { name: 'New Delhi', lat: 28.6139, lon: 77.2090, state: 'None', label: 'New Delhi, Delhi, India' },
+  { name: 'Bengaluru', lat: 12.9716, lon: 77.5946, state: 'None', label: 'Bengaluru, Karnataka, India' },
+];
+
 export function App() {
-  // Locale State
-  const [lang, setLang] = useState<SupportedLanguage>('en');
-  const t = TRANSLATIONS[lang];
+  const t = TRANSLATIONS.en;
 
   // Geolocation & Address State (Default: Ahmedabad, Gujarat - solar hub)
   const [lat, setLat] = useState<number>(23.0225);
@@ -274,28 +280,6 @@ Check your rooftop solar potential with SolarScope!`;
           </div>
 
           <div className="header-actions">
-            {/* Language Selector */}
-            <div className="lang-selector">
-              <button
-                onClick={() => setLang('en')}
-                className={`lang-btn ${lang === 'en' ? 'active' : ''}`}
-              >
-                EN
-              </button>
-              <button
-                onClick={() => setLang('hi')}
-                className={`lang-btn ${lang === 'hi' ? 'active' : ''}`}
-              >
-                हिंदी
-              </button>
-              <button
-                onClick={() => setLang('gu')}
-                className={`lang-btn ${lang === 'gu' ? 'active' : ''}`}
-              >
-                ગુજરાતી
-              </button>
-            </div>
-
             {/* Quick PDF export in navbar */}
             <button onClick={handleDownloadPdf} className="btn-header-action">
               <Download size={15} />
@@ -307,8 +291,15 @@ Check your rooftop solar potential with SolarScope!`;
 
       {/* Main Container */}
       <main className="app-main">
-        {/* Address Search Banner */}
+        {/* Hero & Address Search Banner */}
         <section className="search-banner">
+          <div className="hero-text-block">
+            <h1 className="hero-heading">Satellite Rooftop Solar & PM Surya Ghar Sizing Engine</h1>
+            <p className="hero-subtext">
+              Trace your roof on satellite maps, calculate central & state DBT subsidies, predict summer heat derating with 20+ years of NASA climatology, and download an official feasibility report.
+            </p>
+          </div>
+
           <form onSubmit={handleSearchSubmit} className="search-form">
             <div className="search-input-wrap">
               <Search size={18} className="search-icon" />
@@ -341,6 +332,26 @@ Check your rooftop solar potential with SolarScope!`;
               </div>
             )}
           </form>
+
+          {/* Quick city selector chips */}
+          <div className="quick-city-pills">
+            <span className="quick-city-label">Popular Solar Hubs:</span>
+            {QUICK_CITIES.map((c) => (
+              <button
+                key={c.name}
+                type="button"
+                onClick={() => {
+                  setLat(c.lat);
+                  setLon(c.lon);
+                  setLocationName(c.label);
+                  if (c.state !== 'None') setStateKey(c.state);
+                }}
+                className={`btn-chip ${locationName.includes(c.name) ? 'active' : ''}`}
+              >
+                {c.name}
+              </button>
+            ))}
+          </div>
         </section>
 
         {/* Two-Column Interactive Workspace: Map + Sizing Form */}
@@ -350,7 +361,6 @@ Check your rooftop solar potential with SolarScope!`;
             lat={lat}
             lon={lon}
             onRoofAreaChange={handleRoofAreaChange}
-            lang={lang}
             locationName={locationName}
           />
 
@@ -578,15 +588,6 @@ Check your rooftop solar potential with SolarScope!`;
           </div>
         </section>
 
-        {/* 7-Day Live Forecast Widget (Powered by Open-Meteo) */}
-        <section>
-          <WeeklyForecastWidget
-            forecast={forecast}
-            loading={forecastLoading}
-            systemKw={systemCapacityKw}
-          />
-        </section>
-
         {/* 2x2 Data Intelligence Visualizations */}
         <section className="charts-grid">
           {/* Chart 1: PM Surya Ghar Subsidy Efficiency Curve */}
@@ -599,12 +600,21 @@ Check your rooftop solar potential with SolarScope!`;
           <MonthlyGenerationChart generation={generation} />
         </section>
 
+        {/* 7-Day Live Generation Forecast Widget (Powered by Open-Meteo) */}
+        <section>
+          <WeeklyForecastWidget
+            forecast={forecast}
+            loading={forecastLoading}
+            systemKw={systemCapacityKw}
+          />
+        </section>
+
         {/* 25-Year Cashflow & Payback Line Chart */}
         <section>
           <CashflowChart financials={financials} />
         </section>
 
-        {/* Wikipedia Knowledge Cards & Policy Accordion */}
+        {/* Wikipedia Knowledge Cards & Policy Summary */}
         {wikiCards.length > 0 && (
           <section className="card-glass">
             <div className="panel-header mb-3">
@@ -641,6 +651,61 @@ Check your rooftop solar potential with SolarScope!`;
           </section>
         )}
 
+        {/* PM Surya Ghar DBT Application Checklist */}
+        <section className="card-glass checklist-section">
+          <div className="panel-header mb-3">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 size={20} className="text-emerald" />
+              <h3 className="panel-title">PM Surya Ghar: Muft Bijli Yojana Application Checklist</h3>
+            </div>
+            <p className="panel-subtitle">
+              Verify these 4 prerequisites before initiating your DBT subsidy claim on the National Portal
+            </p>
+          </div>
+
+          <div className="checklist-grid">
+            <div className="checklist-card">
+              <div className="checklist-step-num">01</div>
+              <div className="checklist-content">
+                <h4 className="checklist-card-title">DISCOM Consumer ID</h4>
+                <p className="checklist-card-desc">
+                  Active electricity connection in the applicant's name with recent paid electricity bill.
+                </p>
+              </div>
+            </div>
+
+            <div className="checklist-card">
+              <div className="checklist-step-num">02</div>
+              <div className="checklist-content">
+                <h4 className="checklist-card-title">Aadhaar-Linked Bank Account</h4>
+                <p className="checklist-card-desc">
+                  Bank account with Aadhaar seeding and NPCI mapping for direct government subsidy deposit.
+                </p>
+              </div>
+            </div>
+
+            <div className="checklist-card">
+              <div className="checklist-step-num">03</div>
+              <div className="checklist-content">
+                <h4 className="checklist-card-title">Shadow-Free Rooftop</h4>
+                <p className="checklist-card-desc">
+                  Minimum ~10 m² (107 sq.ft) per kWp of unshaded roof space for module mounting structures.
+                </p>
+              </div>
+            </div>
+
+            <div className="checklist-card">
+              <div className="checklist-step-num">04</div>
+              <div className="checklist-content">
+                <h4 className="checklist-card-title">Empaneled Vendor & Net Meter</h4>
+                <p className="checklist-card-desc">
+                  DISCOM-approved vendor installation followed by bi-directional net-meter commissioning.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Next Steps Checklist & Actions */}
         <section className="action-banner">
           <div>
@@ -651,6 +716,15 @@ Check your rooftop solar potential with SolarScope!`;
           </div>
 
           <div className="action-btns">
+            <a
+              href="https://pmsuryaghar.gov.in/"
+              target="_blank"
+              rel="noreferrer"
+              className="btn-portal-action"
+            >
+              <ExternalLink size={18} />
+              <span>Apply on pmsuryaghar.gov.in</span>
+            </a>
             <button onClick={handleDownloadPdf} className="btn-primary-action">
               <Download size={18} />
               <span>{t.downloadPdf}</span>

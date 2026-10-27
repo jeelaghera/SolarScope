@@ -21,7 +21,13 @@ export async function fetchCountryDetails(countryName = 'india'): Promise<Countr
   }
 
   try {
-    const res = await fetch(`https://restcountries.com/v3.1/name/${encodeURIComponent(countryName)}?fields=name,currencies,flags`);
+    const apiKey = import.meta.env.VITE_REST_COUNTRIES_API_KEY || '';
+    const headers: Record<string, string> = { Accept: 'application/json' };
+    if (apiKey) headers['X-API-Key'] = apiKey;
+
+    const res = await fetch(`https://restcountries.com/v3.1/name/${encodeURIComponent(countryName)}?fields=name,currencies,flags`, {
+      headers,
+    });
     if (!res.ok) throw new Error(`REST Countries HTTP ${res.status}`);
     const data = await res.json();
     const c = data[0];

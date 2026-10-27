@@ -28,7 +28,14 @@ export async function fetchWikiArticle(topicKey: string): Promise<WikiArticleSum
   const url = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(topicKey)}`;
 
   try {
-    const res = await fetch(url);
+    const apiKey = import.meta.env.VITE_WIKIPEDIA_API_KEY || '';
+    const headers: Record<string, string> = {
+      Accept: 'application/json',
+      'Api-User-Agent': 'SolarScope-Platform/1.0',
+    };
+    if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
+
+    const res = await fetch(url, { headers });
     if (!res.ok) throw new Error(`Wiki API ${res.status}`);
     const data = await res.json();
 
