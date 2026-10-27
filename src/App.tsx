@@ -3,12 +3,18 @@ import confetti from 'canvas-confetti';
 import {
   Award,
   CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  CreditCard,
   Download,
   ExternalLink,
+  Home,
   Info,
   MapPin,
   Search,
   Share2,
+  ShieldCheck,
+  Sliders,
   Sparkles,
   Sun,
   Zap,
@@ -73,6 +79,7 @@ export function App() {
   const [stateKey, setStateKey] = useState<string>('Gujarat');
   const [tariff, setTariff] = useState<number>(SOLAR_DEFAULTS.electricityTariff);
   const [costPerKw, setCostPerKw] = useState<number>(SOLAR_DEFAULTS.costPerKw);
+  const [showAdvanced, setShowAdvanced] = useState<boolean>(false);
 
   // API Data States
   const [climatology, setClimatology] = useState<NasaPowerClimatology | null>(null);
@@ -280,8 +287,12 @@ Check your rooftop solar potential with SolarScope!`;
           </div>
 
           <div className="header-actions">
+            <div className="current-pin-pill">
+              <MapPin size={13} className="text-amber" />
+              <span>{locationName.split(',')[0]}</span>
+            </div>
             {/* Quick PDF export in navbar */}
-            <button onClick={handleDownloadPdf} className="btn-header-action">
+            <button onClick={handleDownloadPdf} className="btn-header-action" title="Download instant feasibility report">
               <Download size={15} />
               <span>PDF Report</span>
             </button>
@@ -367,9 +378,12 @@ Check your rooftop solar potential with SolarScope!`;
           {/* Right: Sizing & Financial Controls */}
           <div className="input-panel card-glass">
             <div className="panel-header">
-              <h2 className="panel-title">System Sizing & Subsidy Inputs</h2>
+              <div className="flex items-center justify-between">
+                <h2 className="panel-title">System Sizing & Subsidy Inputs</h2>
+                <span className="step-tag">Step 1</span>
+              </div>
               <p className="panel-subtitle">
-                Fine-tune your monthly bill and capacity to see live DBT subsidy benefits
+                Enter your monthly bill to auto-calculate your recommended system & subsidies
               </p>
             </div>
 
@@ -422,6 +436,24 @@ Check your rooftop solar potential with SolarScope!`;
                   />
                 </div>
               )}
+
+              {/* Quick bill preset pills */}
+              {inputMode === 'bill' && (
+                <div className="quick-bill-pills">
+                  <span className="quick-bill-label">Quick Bills:</span>
+                  {[1500, 2500, 4000, 6000].map((b) => (
+                    <button
+                      key={b}
+                      type="button"
+                      onClick={() => handleBillChange(b)}
+                      className={`btn-chip ${monthlyBill === b ? 'active-amber' : ''}`}
+                    >
+                      {curr}{b.toLocaleString('en-IN')}
+                    </button>
+                  ))}
+                </div>
+              )}
+
               <span className="label-hint">
                 ~{monthlyUnits} units/month (approx. {curr}{(monthlyUnits * tariff).toFixed(0)} at {curr}{tariff}/kWh)
               </span>
@@ -432,7 +464,7 @@ Check your rooftop solar potential with SolarScope!`;
               <div className="flex justify-between items-center">
                 <label className="form-label">
                   <span>Selected System Capacity</span>
-                  <span className="text-amber font-bold">{systemCapacityKw} kWp</span>
+                  <span className="text-amber font-bold text-base">{systemCapacityKw} kWp</span>
                 </label>
               </div>
 
@@ -457,11 +489,10 @@ Check your rooftop solar potential with SolarScope!`;
                 <button
                   type="button"
                   onClick={handleSweetSpotClick}
-                  className={`size-pill-btn ${systemCapacityKw === 3.0 ? 'active' : ''}`}
-                  style={{ borderColor: systemCapacityKw === 3.0 ? '#f59e0b' : 'rgba(245,158,11,0.4)' }}
+                  className={`size-pill-btn sweetspot-highlight ${systemCapacityKw === 3.0 ? 'active' : ''}`}
                 >
                   <span className="size-val text-amber">3 kW ⭐</span>
-                  <span className="size-sub text-emerald">Max {curr}78k</span>
+                  <span className="size-sub text-emerald font-semibold">Max {curr}78k</span>
                 </button>
                 <button
                   type="button"
@@ -472,6 +503,14 @@ Check your rooftop solar potential with SolarScope!`;
                   <span className="size-sub">{curr}78k Cap</span>
                 </button>
               </div>
+
+              {/* Sweet spot callout */}
+              {systemCapacityKw === 3.0 && (
+                <div className="sweetspot-callout">
+                  <Sparkles size={14} className="text-amber flex-shrink-0" />
+                  <span><strong>3 kW Sweet Spot:</strong> Captures 100% of maximum PM Surya Ghar central DBT subsidy ({curr}78,000)!</span>
+                </div>
+              )}
 
               {/* Capacity Slider */}
               <input
@@ -501,28 +540,48 @@ Check your rooftop solar potential with SolarScope!`;
               </select>
             </div>
 
-            {/* Editable Assumptions */}
-            <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-800">
-              <div className="form-group">
-                <label className="form-label text-xs">Tariff ({curr}/unit)</label>
-                <input
-                  type="number"
-                  step="0.5"
-                  value={tariff}
-                  onChange={(e) => setTariff(Number(e.target.value))}
-                  className="form-input text-xs py-1"
-                />
-              </div>
-              <div className="form-group">
-                <label className="form-label text-xs">Cost/kW ({curr})</label>
-                <input
-                  type="number"
-                  step="5000"
-                  value={costPerKw}
-                  onChange={(e) => setCostPerKw(Number(e.target.value))}
-                  className="form-input text-xs py-1"
-                />
-              </div>
+            {/* Advanced Parameters Accordion (Keeps UI uncluttered) */}
+            <div className="advanced-accordion">
+              <button
+                type="button"
+                onClick={() => setShowAdvanced(!showAdvanced)}
+                className="btn-toggle-advanced"
+              >
+                <div className="flex items-center gap-1.5">
+                  <Sliders size={13} className="text-amber" />
+                  <span>Customize Tariff & Equipment Cost</span>
+                </div>
+                {showAdvanced ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+              </button>
+
+              {showAdvanced && (
+                <div className="advanced-drawer-content">
+                  <div className="grid grid-cols-2 gap-3 pt-2">
+                    <div className="form-group">
+                      <label className="form-label text-xs">Tariff ({curr}/unit)</label>
+                      <input
+                        type="number"
+                        step="0.5"
+                        value={tariff}
+                        onChange={(e) => setTariff(Number(e.target.value))}
+                        className="form-input text-xs py-1"
+                      />
+                      <span className="label-hint">Default: {curr}7.0/kWh</span>
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label text-xs">Cost/kW ({curr})</label>
+                      <input
+                        type="number"
+                        step="5000"
+                        value={costPerKw}
+                        onChange={(e) => setCostPerKw(Number(e.target.value))}
+                        className="form-input text-xs py-1"
+                      />
+                      <span className="label-hint">Default: {curr}60,000/kW</span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Recommendation Alert Box */}
@@ -543,7 +602,7 @@ Check your rooftop solar potential with SolarScope!`;
             </div>
             <div className="metric-value">{systemCapacityKw} kWp</div>
             <div className="metric-sub">
-              Needs ~{(systemCapacityKw * 10).toFixed(0)} m² shadow-free roof
+              Needs ~{(systemCapacityKw * 10).toFixed(0)} m² ({Math.round(systemCapacityKw * 10 * 10.76)} sq.ft) roof
             </div>
           </div>
 
@@ -557,7 +616,7 @@ Check your rooftop solar potential with SolarScope!`;
               {curr}{financials.netInvestment.toLocaleString('en-IN')}
             </div>
             <div className="metric-sub">
-              Total Subsidy: -{curr}{financials.totalSubsidy.toLocaleString('en-IN')}
+              Gross: {curr}{financials.grossCost.toLocaleString('en-IN')} | Subsidy: -{curr}{financials.totalSubsidy.toLocaleString('en-IN')}
             </div>
           </div>
 
@@ -569,7 +628,7 @@ Check your rooftop solar potential with SolarScope!`;
             </div>
             <div className="metric-value">~{financials.paybackYears} Years</div>
             <div className="metric-sub">
-              Break-even in {financials.paybackMonths} months
+              100% investment recovered in ~{financials.paybackMonths} months
             </div>
           </div>
 
@@ -583,7 +642,7 @@ Check your rooftop solar potential with SolarScope!`;
               {curr}{(financials.lifetimeSavings / 100000).toFixed(2)} Lakhs
             </div>
             <div className="metric-sub">
-              ROI: {financials.roiPercent}% | Net Profit: {curr}{(financials.netLifetimeProfit / 100000).toFixed(2)}L
+              Net Profit: {curr}{(financials.netLifetimeProfit / 100000).toFixed(2)}L ({financials.roiPercent}% ROI)
             </div>
           </div>
         </section>
@@ -623,7 +682,7 @@ Check your rooftop solar potential with SolarScope!`;
                 <h3 className="panel-title">{t.educationalTitle}</h3>
               </div>
               <p className="panel-subtitle">
-                Contextual solar energy policies and technical terminology from Wikipedia
+                Contextual solar energy policies, net metering regulations, and photovoltaic basics from Wikipedia
               </p>
             </div>
 
@@ -654,9 +713,12 @@ Check your rooftop solar potential with SolarScope!`;
         {/* PM Surya Ghar DBT Application Checklist */}
         <section className="card-glass checklist-section">
           <div className="panel-header mb-3">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 size={20} className="text-emerald" />
-              <h3 className="panel-title">PM Surya Ghar: Muft Bijli Yojana Application Checklist</h3>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 size={20} className="text-emerald" />
+                <h3 className="panel-title">PM Surya Ghar: Muft Bijli Yojana Application Checklist</h3>
+              </div>
+              <span className="badge-step">Pre-application</span>
             </div>
             <p className="panel-subtitle">
               Verify these 4 prerequisites before initiating your DBT subsidy claim on the National Portal
@@ -665,8 +727,11 @@ Check your rooftop solar potential with SolarScope!`;
 
           <div className="checklist-grid">
             <div className="checklist-card">
-              <div className="checklist-step-num">01</div>
+              <div className="checklist-icon-box">
+                <Zap size={20} className="text-amber" />
+              </div>
               <div className="checklist-content">
+                <div className="checklist-step-tag">Step 01</div>
                 <h4 className="checklist-card-title">DISCOM Consumer ID</h4>
                 <p className="checklist-card-desc">
                   Active electricity connection in the applicant's name with recent paid electricity bill.
@@ -675,8 +740,11 @@ Check your rooftop solar potential with SolarScope!`;
             </div>
 
             <div className="checklist-card">
-              <div className="checklist-step-num">02</div>
+              <div className="checklist-icon-box">
+                <CreditCard size={20} className="text-emerald" />
+              </div>
               <div className="checklist-content">
+                <div className="checklist-step-tag">Step 02</div>
                 <h4 className="checklist-card-title">Aadhaar-Linked Bank Account</h4>
                 <p className="checklist-card-desc">
                   Bank account with Aadhaar seeding and NPCI mapping for direct government subsidy deposit.
@@ -685,8 +753,11 @@ Check your rooftop solar potential with SolarScope!`;
             </div>
 
             <div className="checklist-card">
-              <div className="checklist-step-num">03</div>
+              <div className="checklist-icon-box">
+                <Home size={20} className="text-sky" />
+              </div>
               <div className="checklist-content">
+                <div className="checklist-step-tag">Step 03</div>
                 <h4 className="checklist-card-title">Shadow-Free Rooftop</h4>
                 <p className="checklist-card-desc">
                   Minimum ~10 m² (107 sq.ft) per kWp of unshaded roof space for module mounting structures.
@@ -695,8 +766,11 @@ Check your rooftop solar potential with SolarScope!`;
             </div>
 
             <div className="checklist-card">
-              <div className="checklist-step-num">04</div>
+              <div className="checklist-icon-box">
+                <ShieldCheck size={20} className="text-emerald" />
+              </div>
               <div className="checklist-content">
+                <div className="checklist-step-tag">Step 04</div>
                 <h4 className="checklist-card-title">Empaneled Vendor & Net Meter</h4>
                 <p className="checklist-card-desc">
                   DISCOM-approved vendor installation followed by bi-directional net-meter commissioning.
@@ -709,9 +783,10 @@ Check your rooftop solar potential with SolarScope!`;
         {/* Next Steps Checklist & Actions */}
         <section className="action-banner">
           <div>
-            <h3 className="text-lg font-bold text-white mb-1">{t.nextStepsTitle}</h3>
-            <p className="text-sm text-slate-300 max-w-xl">
-              Apply online at <strong>pmsuryaghar.gov.in</strong> to claim your {curr}{financials.totalSubsidy.toLocaleString('en-IN')} direct benefit transfer subsidy.
+            <div className="badge-ready">Ready to Go Solar?</div>
+            <h3 className="action-heading">Claim Up to {curr}{financials.totalSubsidy.toLocaleString('en-IN')} in Direct DBT Subsidy</h3>
+            <p className="action-subtext">
+              Apply online at <strong>pmsuryaghar.gov.in</strong> or download your official rooftop solar feasibility report to share with local vendors.
             </p>
           </div>
 
@@ -727,11 +802,11 @@ Check your rooftop solar potential with SolarScope!`;
             </a>
             <button onClick={handleDownloadPdf} className="btn-primary-action">
               <Download size={18} />
-              <span>{t.downloadPdf}</span>
+              <span>Download Official Report (PDF)</span>
             </button>
             <button onClick={handleShareWhatsApp} className="btn-whatsapp-action">
               <Share2 size={18} />
-              <span>{t.shareWhatsApp}</span>
+              <span>Share on WhatsApp</span>
             </button>
           </div>
         </section>

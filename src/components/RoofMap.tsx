@@ -253,12 +253,15 @@ export const RoofMap: React.FC<RoofMapProps> = ({
           )}
 
           <div className="quick-presets">
-            <span className="preset-label">Quick sizes:</span>
-            <button onClick={() => handlePresetRoof(35)} className="btn-chip">
-              35 m² (~3 kW)
+            <span className="preset-label">Quick roof sizes:</span>
+            <button type="button" onClick={() => handlePresetRoof(20)} className="btn-chip" title="20 sq meters (~2 kW system)">
+              20 m² (2 kW)
             </button>
-            <button onClick={() => handlePresetRoof(60)} className="btn-chip">
-              60 m² (~5 kW)
+            <button type="button" onClick={() => handlePresetRoof(35)} className="btn-chip active-amber" title="35 sq meters (~3 kW sweet spot)">
+              35 m² (3 kW ⭐)
+            </button>
+            <button type="button" onClick={() => handlePresetRoof(60)} className="btn-chip" title="60 sq meters (~5 kW system)">
+              60 m² (5 kW)
             </button>
           </div>
         </div>
