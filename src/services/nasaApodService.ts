@@ -29,9 +29,23 @@ export async function fetchNasaApod(customKey?: string): Promise<NasaApodData | 
   }
 
   try {
-    const res = await fetch(`https://api.nasa.gov/planetary/apod?api_key=${encodeURIComponent(apiKey)}`);
-    if (!res.ok) throw new Error(`NASA API HTTP ${res.status}`);
-    const data = await res.json();
+    let res = await fetch(`https://api.nasa.gov/planetary/apod?api_key=${encodeURIComponent(apiKey)}`);
+    let data: any = null;
+
+    if (res.ok) {
+      data = await res.json();
+      if (data.code === 500) data = null; // upstream glitch
+    }
+
+    if (!data) {
+      // Fallback to recent solar date
+      const retry = await fetch(`https://api.nasa.gov/planetary/apod?api_key=${encodeURIComponent(apiKey)}&date=2024-03-10`);
+      if (retry.ok) {
+        data = await retry.json();
+      }
+    }
+
+    if (!data || !data.title) throw new Error('NASA API returned empty data');
 
     const result: NasaApodData = {
       title: data.title,

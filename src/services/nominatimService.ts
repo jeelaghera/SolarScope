@@ -66,17 +66,24 @@ export async function searchAddress(query: string): Promise<GeocodeResult[]> {
   if (cached) return cached;
 
   const apiKey = import.meta.env.VITE_NOMINATIM_API_KEY || '';
-  const keyParam = apiKey && !apiKey.startsWith('demo') ? `&key=${encodeURIComponent(apiKey)}` : '';
-  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-    trimmed
-  )}&addressdetails=1&countrycodes=in&limit=5${keyParam}`;
+  const isLocationIq = apiKey && apiKey.startsWith('pk.');
+  
+  const url = isLocationIq
+    ? `https://us1.locationiq.com/v1/search?key=${encodeURIComponent(apiKey)}&q=${encodeURIComponent(
+        trimmed
+      )}&format=json&countrycodes=in&limit=5&addressdetails=1`
+    : `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+        trimmed
+      )}&addressdetails=1&countrycodes=in&limit=5`;
 
   try {
     const headers: Record<string, string> = {
       Accept: 'application/json',
       'User-Agent': 'SolarScope-Platform/1.0',
     };
-    if (apiKey) headers['X-API-Key'] = apiKey;
+    if (apiKey && !isLocationIq && !apiKey.startsWith('demo')) {
+      headers['X-API-Key'] = apiKey;
+    }
 
     const res = await fetch(url, { headers });
 
@@ -112,7 +119,12 @@ export async function reverseGeocode(lat: number, lon: number): Promise<GeocodeR
   const cached = getFromCache<GeocodeResult>(cacheKey);
   if (cached) return cached;
 
-  const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1`;
+  const apiKey = import.meta.env.VITE_NOMINATIM_API_KEY || '';
+  const isLocationIq = apiKey && apiKey.startsWith('pk.');
+
+  const url = isLocationIq
+    ? `https://us1.locationiq.com/v1/reverse?key=${encodeURIComponent(apiKey)}&lat=${lat}&lon=${lon}&format=json&addressdetails=1`
+    : `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1`;
 
   try {
     const res = await fetch(url, {

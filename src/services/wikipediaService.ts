@@ -33,7 +33,9 @@ export async function fetchWikiArticle(topicKey: string): Promise<WikiArticleSum
       Accept: 'application/json',
       'Api-User-Agent': 'SolarScope-Platform/1.0',
     };
-    if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
+    if (apiKey && !apiKey.startsWith('demo')) {
+      headers['Authorization'] = `Bearer ${apiKey}`;
+    }
 
     const res = await fetch(url, { headers });
     if (!res.ok) throw new Error(`Wiki API ${res.status}`);
